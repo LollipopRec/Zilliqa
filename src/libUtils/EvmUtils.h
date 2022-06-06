@@ -39,10 +39,10 @@ class EvmUtils {
                                       std::string& root_w_version);
 
   /// get the command for invoking the evm_runner while deploying
-  static Json::Value GetCreateContractJson(EvmCallParameters& details);
+  static Json::Value GetCreateContractJson(EvmCallParameters& params);
 
   /// get the command for invoking the evm_runner while calling
-  static Json::Value GetCallContractJson(const EvmCallParameters& details);
+  static Json::Value GetCallContractJson(const EvmCallParameters& params);
 
   static std::string GetDataFromItemData(const std::string& itemData);
 
@@ -50,7 +50,7 @@ class EvmUtils {
                                      INVOKE_TYPE invoke_type,
                                      uint64_t& oldValue, uint64_t newValue);
 
-  static bool EvmUpdateContractStateAndAccount(Account* fromAccount,
+  static bool EvmUpdateContractStateAndAccount(Account* contractAccount,
                                                evmproj::ApplyInstructions& op);
 };
 

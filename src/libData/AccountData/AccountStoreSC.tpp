@@ -125,8 +125,9 @@ void AccountStoreSC<MAP>::InvokeInterpreter(
 
 template <class MAP>
 uint64_t AccountStoreSC<MAP>::InvokeEvmInterpreter(
-    Account* account, INVOKE_TYPE invoke_type, EvmCallParameters& params,
-    const uint32_t& version, bool& ret, TransactionReceipt& receipt) {
+    Account* contractAccount, INVOKE_TYPE invoke_type,
+    EvmCallParameters& params, const uint32_t& version, bool& ret,
+    TransactionReceipt& receipt) {
   bool csUpdate{true};
 
   evmproj::CallRespose evmReturnValues;
@@ -179,7 +180,7 @@ uint64_t AccountStoreSC<MAP>::InvokeEvmInterpreter(
 
     if (ret) {
       csUpdate = EvmUtils::EvmUpdateContractStateAndAccount(
-          account, evmReturnValues.m_apply);
+          contractAccount, evmReturnValues.m_apply);
 
       if (evmReturnValues.Logs().size() > 0) {
         LOG_GENERAL(WARNING, evmReturnValues.Logs());
@@ -188,10 +189,10 @@ uint64_t AccountStoreSC<MAP>::InvokeEvmInterpreter(
       }
 
       if (invoke_type == RUNNER_CREATE) {
-        // Update the binary code on the Account. 
-        account->SetImmutable(
+        // Update the binary code on the Account.
+        contractAccount->SetImmutable(
             DataConversion::StringToCharArray(evmReturnValues.ReturnedBytes()),
-            account->GetInitData());
+            contractAccount->GetInitData());
       }
     }
     if (ret && not csUpdate) {
@@ -383,8 +384,7 @@ bool AccountStoreSC<MAP>::UpdateAccounts(const uint64_t& blockNum,
       if (not toAccount->isEvmContract()) {
         InvokeInterpreter(CHECKER, checkerPrint, scilla_version, is_library,
                           gasRemained, 0, ret_checker, receipt);
-
-      } 
+      }
       // 0xabc._version
       // 0xabc._depth.data1
       // 0xabc._type.data1
@@ -1020,7 +1020,6 @@ bool AccountStoreSC<MAP>::ParseContractCheckerOutput(
   LOG_MARKER();
 
   std::cout << "input " << checkerPrint << std::endl;
-
 
   LOG_GENERAL(
       INFO,

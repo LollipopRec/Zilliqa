@@ -104,36 +104,39 @@ Json::Value EvmUtils::GetCallContractJson(const EvmCallParameters& params) {
 }
 
 bool EvmUtils::EvmUpdateContractStateAndAccount(
-    Account* fromAccount, evmproj::ApplyInstructions& op) {
-  std::map<std::string, bytes> myMap;
-  std::set<std::string> myIndices;
-
+    Account* contractAccount, evmproj::ApplyInstructions& op) {
   if (op.OperationType() == "modify") {
     if (op.isResetStorage()) {
-      // add code once we have figured out how :
+      contractAccount->SetStorageRoot(dev::h256());
     }
 
-  Contract::ContractStorage::GetContractStorage().FetchUpdatedStateValuesForAddress(Address(op.Address()),myMap,myIndices,false);
+    /* useful for debug
+    std::map<std::string, bytes> myMap;
+    std::set<std::string> myIndices;
+    Contract::ContractStorage::GetContractStorage().FetchUpdatedStateValuesForAddress(Address(op.Address()),myMap,myIndices,false);
 
-  std::cout << "map for address " << op.Address() << " has " << myMap.size() << " entries " << std::endl;
-  for (const auto& iter:myMap){
-    std::cout << "key " << iter.first << " value " << DataConversion::CharArrayToString(iter.second) << endl;
+    std::cout << "map for address " << op.Address() << " has " << myMap.size()
+    << " entries " << std::endl; for (const auto& iter:myMap){ std::cout << "key
+    " << iter.first << " value " <<
+    DataConversion::CharArrayToString(iter.second) << endl;
 
-  }
+    }
 
-  myMap.clear();
+    myMap.clear();
 
-  Contract::ContractStorage::GetContractStorage().FetchStateDataForContract(myMap,
-                                 Address(op.Address()));
+    Contract::ContractStorage::GetContractStorage().FetchStateDataForContract(myMap,
+                                   Address(op.Address()));
 
-  std::cout << "map for address " << op.Address() << " has " << myMap.size() << " entries " << std::endl;
-  for (const auto& iter:myMap){
-    std::cout << "key " << iter.first << " value " << DataConversion::CharArrayToString(iter.second) << endl;
+    std::cout << "map for address " << op.Address() << " has " << myMap.size()
+    << " entries " << std::endl; for (const auto& iter:myMap){ std::cout << "key
+    " << iter.first << " value " <<
+    DataConversion::CharArrayToString(iter.second) << endl;
 
-  }
+    }
+    */
 
     if (op.Code().size() > 0)
-      fromAccount->SetCode(DataConversion::StringToCharArray(op.Code()));
+      contractAccount->SetCode(DataConversion::StringToCharArray(op.Code()));
 
     for (const auto& it : op.Storage()) {
       if (!Contract::ContractStorage::GetContractStorage().UpdateStateValue(
@@ -145,11 +148,11 @@ bool EvmUtils::EvmUpdateContractStateAndAccount(
     }
 
     if (op.Balance().size()) {
-      fromAccount->SetBalance(uint128_t(op.Balance()));
+      contractAccount->SetBalance(uint128_t(op.Balance()));
     }
 
     if (op.Nonce().size()) {
-      fromAccount->SetNonce(std::stoull(op.Nonce()));
+      contractAccount->SetNonce(std::stoull(op.Nonce()));
     }
 
   } else if (op.OperationType() == "delete") {
