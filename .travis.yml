@@ -8,9 +8,11 @@ matrix:
     - name: Ubuntu-18.04
       os: linux
       dist: bionic
+      env: PY2=""
     - name: Ubuntu-20.04
       os: linux
       dist: focal
+      env: PY2="2"
     # - os: osx
     #  osx_image: xcode10.1
 
@@ -43,15 +45,15 @@ addons:
       - pkg-config
       # Development dependency
       - ccache
-      - clang-5.0
-      - clang-format-5.0
-      - clang-tidy-5.0
+      - clang
+      - clang-format
+      - clang-tidy
       - curl
       - gawk
       - git
       - lcov
       - libxml2-utils
-      - python-dev
+      - python${PY2}-dev
       - python3-dev
       - libsecp256k1-dev
 
