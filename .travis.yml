@@ -52,6 +52,7 @@ addons:
       - gawk
       - git
       - lcov
+      - libffi-dev
       - libxml2-utils
       - python${PY2}-dev
       - python3-dev
