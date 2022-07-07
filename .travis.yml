@@ -8,11 +8,15 @@ matrix:
     - name: Ubuntu-18.04
       os: linux
       dist: bionic
-      env: PY2=""
+      env:
+        - PY2=""
+        - SCILLA_CONTAINER=v0.11.0
     - name: Ubuntu-20.04
       os: linux
       dist: focal
-      env: PY2="2"
+      env:
+        - PY2="2"
+        - SCILLA_CONTAINER=scilla_ubuntu20_011323a_v010
     # - os: osx
     #  osx_image: xcode10.1
 
@@ -64,7 +68,7 @@ install:
   - bash ./cmake-3.19.3-Linux-x86_64.sh --skip-license --prefix="${HOME}"/.local/
   - cmake --version
   - rm cmake-3.19.3-Linux-x86_64.sh
-  - docker run --rm -it -v /scilla:/root/scilla zilliqa/scilla:v0.11.0 cp -r /scilla /root/
+  - docker run --rm -it -v /scilla:/root/scilla zilliqa/scilla:${SCILLA_CONTAINER} cp -r /scilla /root/
   - ls /scilla/0/
 
 script:
