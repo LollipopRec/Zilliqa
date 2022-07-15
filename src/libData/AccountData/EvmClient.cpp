@@ -75,6 +75,10 @@ bool EvmClient::OpenServer(uint32_t version) {
 
   LOG_GENERAL(WARNING, "Executed: " << cmdStr << "on " << version);
 
+  // Temporary
+  LOG_GENERAL(WARNING, "Waiting 5 seconds for launch: " );
+  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+
   return true;
 }
 
