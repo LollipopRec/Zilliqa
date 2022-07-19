@@ -76,7 +76,7 @@ bool EvmClient::OpenServer(uint32_t version) {
   LOG_GENERAL(WARNING, "Executed: " << cmdStr << "on " << version);
 
   // Temporary
-  LOG_GENERAL(WARNING, "Waiting 5 seconds for launch: " );
+  LOG_GENERAL(WARNING, "Waiting 5 seconds for launch: ");
   std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 
   return true;
@@ -93,6 +93,8 @@ bool EvmClient::CheckClient(uint32_t version, bool enforce) {
     LOG_GENERAL(WARNING, "OpenServer for version " << version << "failed");
     return false;
   }
+
+  LOG_GENERAL(WARNING, "OpenServer for version " << version << "Creating");
 
   m_connectors[version] =
       std::make_shared<jsonrpc::UnixDomainSocketClient>(EVM_SERVER_SOCKET_PATH);
@@ -146,8 +148,6 @@ bool EvmClient::CallRunner(uint32_t version, const Json::Value& _json,
     if (!CheckClient(version, true)) {
       LOG_GENERAL(WARNING, "CheckClient for version " << version << "failed");
       return CallRunner(version, _json, result, counter - 1);
-    } else {
-      result.SetSuccess(false);
     }
     return false;
   }
