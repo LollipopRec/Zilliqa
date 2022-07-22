@@ -177,6 +177,8 @@ int main(int argc, const char* argv[]) {
 
     LOG_GENERAL(INFO, ZILLIQA_BRAND);
 
+    LOG_GENERAL(INFO, "A Demo Build from Steve");
+
     if (SyncType::NEW_SYNC == syncType && CHAIN_ID == MAINNET_CHAIN_ID) {
       SWInfo::IsLatestVersion();
     }
