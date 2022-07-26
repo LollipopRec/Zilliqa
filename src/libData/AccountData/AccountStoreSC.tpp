@@ -406,13 +406,6 @@ bool AccountStoreSC<MAP>::UpdateAccounts(const uint64_t& blockNum,
           return false;
         }
 
-        if (!ret) {
-          LOG_GENERAL(INFO, "stevenyu ret == false");
-        }
-        if (!ret_checker) {
-          LOG_GENERAL(INFO, "stevenyu ret_checker == false");
-        }
-
         LOG_GENERAL(
             INFO,
             "Create contract failed, but return true in order to change state");
