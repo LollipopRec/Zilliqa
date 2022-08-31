@@ -42,6 +42,7 @@ typedef std::shared_ptr<std::pair<Address, Account>> StateSharedPtr;
 
 struct DiagnosticDataNodes {
   DequeOfShard shards;
+  RoleMap roles;
   DequeOfNode dsCommittee;
 };
 
@@ -289,10 +290,10 @@ class BlockStorage : public Singleton<BlockStorage> {
                       uint16_t& consensusLeaderID);
 
   /// Save shard structure
-  bool PutShardStructure(const DequeOfShard& shards, const uint32_t myshardId);
+  bool PutShardStructure(const DequeOfShard& shards, const RoleMap& roles, const uint32_t myshardId);
 
   /// Retrieve shard structure
-  bool GetShardStructure(DequeOfShard& shards);
+  bool GetShardStructure(DequeOfShard& shards, RoleMap& roles);
 
   /// Save state delta
   bool PutStateDelta(const uint64_t& finalBlockNum, const bytes& stateDelta);
@@ -310,6 +311,7 @@ class BlockStorage : public Singleton<BlockStorage> {
   /// Save data for diagnostic / monitoring purposes (nodes in network)
   bool PutDiagnosticDataNodes(const uint64_t& dsBlockNum,
                               const DequeOfShard& shards,
+                              const RoleMap& roles,
                               const DequeOfNode& dsCommittee);
 
   /// Save data for diagnostic / monitoring purposes (coinbase rewards)
@@ -318,6 +320,7 @@ class BlockStorage : public Singleton<BlockStorage> {
 
   /// Retrieve diagnostic data for specific block number (nodes in network)
   bool GetDiagnosticDataNodes(const uint64_t& dsBlockNum, DequeOfShard& shards,
+                              RoleMap& roles,
                               DequeOfNode& dsCommittee);
 
   /// Retrieve diagnostic data for specific block number (coinbase rewards)

@@ -127,6 +127,7 @@ class DirectoryService : public Executable {
 
   // Temporary buffers for sharding committee members and transaction sharing
   DequeOfShard m_tempShards;
+  RoleMap m_tempRoles;
   std::map<PubKey, uint32_t> m_tempPublicKeyToshardIdMap;
   std::map<PubKey, uint16_t> m_tempMapNodeReputation;
 
@@ -304,6 +305,8 @@ class DirectoryService : public Executable {
                                         uint8_t& difficulty, uint64_t& blockNum,
                                         BlockHash& prevHash);
   void ComputeSharding(const VectorOfPoWSoln& sortedPoWSolns);
+  // Assign roles after compute sharding
+  void AssignRoles();
   void InjectPoWForDSNode(VectorOfPoWSoln& sortedPoWSolns,
                           unsigned int numOfProposedDSMembers,
                           const std::vector<PubKey>& removeDSNodePubkeys);
@@ -520,6 +523,8 @@ class DirectoryService : public Executable {
   std::mutex mutable m_mutexShards;
   DequeOfShard m_shards;
   std::map<PubKey, uint32_t> m_publicKeyToshardIdMap;
+  // Roles assignment
+  RoleMap m_roles;
 
   // Proof of Reputation(PoR) variables.
   std::mutex mutable m_mutexMapNodeReputation;

@@ -156,9 +156,14 @@ message ProtoShardingStructure
         repeated Member members     = 1; // Added in: v1.0, Deprecated in: N/A
         // Add new members here
     }
+    message Role
+    {
+        repeated uint32 shardid     = 1;
+    }  
     uint32 version         = 1; // Added in: v1.0, Deprecated in: N/A
     repeated Shard shards           = 2; // Added in: v1.0, Deprecated in: N/A
     // Add new members here
+    map<int32, Role> roles = 3;
 }
 
 // Used in database "txBlocks"
@@ -376,7 +381,12 @@ message ProtoShardingStructureWithPoWSolns
     {
         repeated Member members           = 1;
     }
+    message Role
+    {
+        repeated uint32 shardid     = 1;
+    }  
     repeated Shard shards                 = 1;
+    map<int32, Role> roles = 2;
 }
 
 message ProtoDSWinnerPoW

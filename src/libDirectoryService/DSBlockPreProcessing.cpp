@@ -18,6 +18,8 @@
 #include <algorithm>
 #include <chrono>
 #include <thread>
+#include <cstdlib>
+#include <boost/algorithm/string/split.hpp>
 
 #include "DSComposition.h"
 #include "DirectoryService.h"
@@ -134,6 +136,7 @@ void DirectoryService::ComputeSharding(const VectorOfPoWSoln& sortedPoWSolns) {
   LOG_GENERAL(INFO, "Number of PoWs for sharding = " << numNodesForSharding);
 
   const uint32_t shardSize = m_mediator.GetShardSize(false);
+  LOG_GENERAL(INFO, "Shard size = " << shardSize);
 
   // Generate the number of shards and node counts per shard
   vector<uint32_t> shardCounts;
@@ -204,6 +207,50 @@ void DirectoryService::ComputeSharding(const VectorOfPoWSoln& sortedPoWSolns) {
 
     // Decrement remaining count for this shard
     shardCounts.at(shard_index)--;
+  }
+  AssignRoles();
+}
+
+void DirectoryService::AssignRoles() {
+  LOG_MARKER();
+  auto shardCount = m_shards.size();
+  if (m_shards.size() < ROLE_COUNT) {
+    LOG_GENERAL(WARNING, "Not enough shards to assign role.");
+    return; 
+  }
+  // TODO: this assign strategy can be improved as needed, not exactly the same as design doc currently
+  std::vector<std::string> props;
+  boost::split(props, ROLES_SHARD_ASSIGN_PROP, boost::is_any_of(":"));
+  if (props.size() < ROLE_COUNT) {
+    LOG_GENERAL(WARNING, "Bad `ROLES_SHARD_ASSIGN_PROP` in config.");
+    return;
+  }
+  const int propRecommender = std::atoi(props[0].c_str());
+  const int propModelTrainer = std::atoi(props[1].c_str());
+  const int propContentMiner = std::atoi(props[2].c_str());
+  const int propCount = propRecommender + propModelTrainer + propContentMiner;
+  const int offsetModelTrainder = std::max(1, propModelTrainer * int(shardCount) / propCount);
+  const int offsetContentMiner = offsetModelTrainder + std::max(1, (propContentMiner*int(shardCount))/propCount);
+  m_roles.clear();
+  ShardIdList allIds;
+  for (uint32_t i=0; i<shardCount; i++) {
+    allIds.emplace_back(i);
+  }
+  ShardIdList modelTrainerShards(allIds.begin(), allIds.begin()+offsetModelTrainder); 
+  ShardIdList contentMinerShards(allIds.begin()+offsetModelTrainder, allIds.begin()+offsetContentMiner);
+  ShardIdList recommenderShards(allIds.begin()+offsetContentMiner, allIds.end());
+  m_roles[MODEL_TRAINER] = modelTrainerShards;
+  m_roles[CONTENT_MINER] = contentMinerShards;
+  m_roles[RECOMMENDER] = recommenderShards;
+
+  // Print role assignment result
+  for(const auto& role: m_roles) {
+    std::string ss;
+    ss += "Assigned role: " + std::to_string(role.first) + " to shards:";
+    for (const auto& sid: role.second) {
+      ss += " " + std::to_string(sid);
+    }
+    LOG_GENERAL(INFO, ss);
   }
 }
 
@@ -1042,7 +1089,7 @@ bool DirectoryService::RunConsensusOnDSBlockWhenDSPrimary() {
 
   // Compute the DSBlockHashSet member of the DSBlockHeader
   DSBlockHashSet dsBlockHashSet;
-  if (!Messenger::GetShardingStructureHash(SHARDINGSTRUCTURE_VERSION, m_shards,
+  if (!Messenger::GetShardingStructureHash(SHARDINGSTRUCTURE_VERSION, m_shards, m_roles,
                                            dsBlockHashSet.m_shardingHash)) {
     LOG_EPOCH(WARNING, m_mediator.m_currentEpochNum,
               "Messenger::GetShardingStructureHash failed.");
@@ -1051,7 +1098,7 @@ bool DirectoryService::RunConsensusOnDSBlockWhenDSPrimary() {
 
   m_mediator.m_node->m_myshardId = m_shards.size();
   if (!BlockStorage::GetBlockStorage().PutShardStructure(
-          m_shards, m_mediator.m_node->m_myshardId)) {
+          m_shards, m_roles, m_mediator.m_node->m_myshardId)) {
     LOG_GENERAL(WARNING, "BlockStorage::PutShardStructure failed");
     return false;
   }
@@ -1137,7 +1184,7 @@ bool DirectoryService::RunConsensusOnDSBlockWhenDSPrimary() {
           bytes& messageToCosign) mutable -> bool {
     return Messenger::SetDSDSBlockAnnouncement(
         dst, offset, consensusID, blockNumber, blockHash, leaderID, leaderKey,
-        *m_pendingDSBlock, m_shards, m_allPoWs, dsWinnerPoWs, messageToCosign);
+        *m_pendingDSBlock, m_shards, m_roles, m_allPoWs, dsWinnerPoWs, messageToCosign);
   };
 
   cl->StartConsensus(announcementGeneratorFunc, nullptr, BROADCAST_GOSSIP_MODE);
@@ -1159,6 +1206,7 @@ bool DirectoryService::DSBlockValidator(
   }
 
   m_tempShards.clear();
+  m_roles.clear();
 
   lock(m_mutexPendingDSBlock, m_mutexAllPoWConns);
   lock_guard<mutex> g(m_mutexPendingDSBlock, adopt_lock);
@@ -1171,7 +1219,7 @@ bool DirectoryService::DSBlockValidator(
 
   if (!Messenger::GetDSDSBlockAnnouncement(
           message, offset, consensusID, blockNumber, blockHash, leaderID,
-          leaderKey, *m_pendingDSBlock, m_tempShards, allPoWsFromLeader,
+          leaderKey, *m_pendingDSBlock, m_tempShards, m_tempRoles, allPoWsFromLeader,
           dsWinnerPoWsFromLeader, messageToCosign)) {
     LOG_EPOCH(WARNING, m_mediator.m_currentEpochNum,
               "Messenger::GetDSDSBlockAnnouncement failed.");
@@ -1210,7 +1258,7 @@ bool DirectoryService::DSBlockValidator(
   // Verify the DSBlockHashSet member of the DSBlockHeader
   ShardingHash shardingHash;
   if (!Messenger::GetShardingStructureHash(SHARDINGSTRUCTURE_VERSION,
-                                           m_tempShards, shardingHash)) {
+                                           m_tempShards, m_tempRoles, shardingHash)) {
     LOG_EPOCH(WARNING, m_mediator.m_currentEpochNum,
               "Messenger::GetShardingStructureHash failed.");
     return false;

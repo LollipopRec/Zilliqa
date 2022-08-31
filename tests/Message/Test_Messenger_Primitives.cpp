@@ -62,6 +62,7 @@ BOOST_AUTO_TEST_CASE(test_GetShardHash) {
 
 BOOST_AUTO_TEST_CASE(test_GetShardingStructureHash) {
   DequeOfShard shards;
+  RoleMap roles;
   ShardingHash dst;
 
   for (unsigned int i = 0, count = TestUtils::Dist1to99(); i < count; i++) {
@@ -74,7 +75,7 @@ BOOST_AUTO_TEST_CASE(test_GetShardingStructureHash) {
   }
 
   BOOST_CHECK(Messenger::GetShardingStructureHash(SHARDINGSTRUCTURE_VERSION,
-                                                  shards, dst));
+                                                  shards, roles, dst));
 }
 
 BOOST_AUTO_TEST_CASE(test_SetAndGetDSBlockHeader) {

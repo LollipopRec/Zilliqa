@@ -116,7 +116,7 @@ bool DirectoryService::ComposeDSBlockMessageForSender(bytes& dsblock_message) {
   dsblock_message = {MessageType::NODE, NodeInstructionType::DSBLOCK};
   if (!Messenger::SetNodeVCDSBlocksMessage(
           dsblock_message, MessageOffset::BODY, 0, *m_pendingDSBlock,
-          m_VCBlockVector, SHARDINGSTRUCTURE_VERSION, m_shards)) {
+          m_VCBlockVector, SHARDINGSTRUCTURE_VERSION, m_shards, m_roles)) {
     LOG_EPOCH(
         WARNING, m_mediator.m_currentEpochNum,
         "Messenger::SetNodeVCDSBlocksMessage failed " << *m_pendingDSBlock);
@@ -176,7 +176,7 @@ void DirectoryService::SendDSBlockToShardNodes(
     if (!Messenger::SetNodeVCDSBlocksMessage(
             dsblock_message_to_shard, MessageOffset::BODY, shardId,
             *m_pendingDSBlock, m_VCBlockVector, SHARDINGSTRUCTURE_VERSION,
-            m_shards)) {
+            m_shards, m_roles)) {
       LOG_EPOCH(
           WARNING, m_mediator.m_currentEpochNum,
           "Messenger::SetNodeVCDSBlocksMessage failed. " << *m_pendingDSBlock);
@@ -749,6 +749,7 @@ void DirectoryService::ProcessDSBlockConsensusWhenDone() {
     lock_guard<mutex> g(m_mutexMapNodeReputation);
     if (m_mode == BACKUP_DS) {
       m_shards = move(m_tempShards);
+      m_roles = move(m_tempRoles);
       m_publicKeyToshardIdMap = move(m_tempPublicKeyToshardIdMap);
       m_mapNodeReputation = move(m_tempMapNodeReputation);
     } else if (m_mode == PRIMARY_DS) {
@@ -758,7 +759,7 @@ void DirectoryService::ProcessDSBlockConsensusWhenDone() {
 
   m_mediator.m_node->m_myshardId = m_shards.size();
   if (!BlockStorage::GetBlockStorage().PutShardStructure(
-          m_shards, m_mediator.m_node->m_myshardId)) {
+          m_shards, m_roles, m_mediator.m_node->m_myshardId)) {
     LOG_GENERAL(WARNING, "BlockStorage::PutShardStructure failed");
     return;
   }

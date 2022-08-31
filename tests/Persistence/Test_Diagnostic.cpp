@@ -74,6 +74,7 @@ BOOST_AUTO_TEST_CASE(testDiagnosticDataNodes) {
 
   vector<uint64_t> histDSBlockNum;
   vector<DequeOfShard> histShards;
+  vector<RoleMap> histRoles;
   vector<DequeOfNode> histDSCommittee;
 
   const unsigned int NUM_ENTRIES = 15;
@@ -90,16 +91,17 @@ BOOST_AUTO_TEST_CASE(testDiagnosticDataNodes) {
     PrintDSCommittee(histDSCommittee.back());
 
     BOOST_CHECK(BlockStorage::GetBlockStorage().PutDiagnosticDataNodes(
-        histDSBlockNum.back(), histShards.back(), histDSCommittee.back()));
+        histDSBlockNum.back(), histShards.back(), histRoles.back(),histDSCommittee.back()));
   }
 
   // Look-up by block number
   for (unsigned int i = 0; i < NUM_ENTRIES; i++) {
     DequeOfShard shardsDeserialized;
+    RoleMap rolesDeserialized;
     DequeOfNode dsCommitteeDeserialized;
 
     BOOST_CHECK(BlockStorage::GetBlockStorage().GetDiagnosticDataNodes(
-        histDSBlockNum.at(i), shardsDeserialized, dsCommitteeDeserialized));
+        histDSBlockNum.at(i), shardsDeserialized, rolesDeserialized, dsCommitteeDeserialized));
 
     BOOST_CHECK(shardsDeserialized == histShards.at(i));
     BOOST_CHECK(dsCommitteeDeserialized == histDSCommittee.at(i));
@@ -118,10 +120,11 @@ BOOST_AUTO_TEST_CASE(testDiagnosticDataNodes) {
   for (unsigned int i = 0; i < NUM_ENTRIES; i++) {
     // First, check the entry is still there
     DequeOfShard shardsDeserialized;
+    RoleMap rolesDeserialized;
     DequeOfNode dsCommitteeDeserialized;
 
     BOOST_CHECK(BlockStorage::GetBlockStorage().GetDiagnosticDataNodes(
-        histDSBlockNum.at(i), shardsDeserialized, dsCommitteeDeserialized));
+        histDSBlockNum.at(i), shardsDeserialized, rolesDeserialized, dsCommitteeDeserialized));
 
     BOOST_CHECK(shardsDeserialized == histShards.at(i));
     BOOST_CHECK(dsCommitteeDeserialized == histDSCommittee.at(i));
@@ -136,7 +139,7 @@ BOOST_AUTO_TEST_CASE(testDiagnosticDataNodes) {
 
     // Check that the entry has been deleted
     BOOST_CHECK(BlockStorage::GetBlockStorage().GetDiagnosticDataNodes(
-                    histDSBlockNum.at(i), shardsDeserialized,
+                    histDSBlockNum.at(i), shardsDeserialized, rolesDeserialized,
                     dsCommitteeDeserialized) == false);
     BOOST_CHECK(BlockStorage::GetBlockStorage().GetDiagnosticDataNodesCount() ==
                 (NUM_ENTRIES - i - 1));

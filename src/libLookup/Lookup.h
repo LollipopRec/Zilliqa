@@ -283,6 +283,7 @@ class Lookup : public Executable {
 
   DequeOfNode GetDSComm();
   DequeOfShard GetShardPeers();
+  RoleMap GetRoleMap();
   VectorOfPeer GetNodePeers();
 
   // Start synchronization with other lookup nodes as a lookup node

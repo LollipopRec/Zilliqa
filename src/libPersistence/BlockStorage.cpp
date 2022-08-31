@@ -1011,6 +1011,7 @@ bool BlockStorage::GetDSCommittee(shared_ptr<DequeOfNode>& dsCommittee,
 }
 
 bool BlockStorage::PutShardStructure(const DequeOfShard& shards,
+                                     const RoleMap& roles,
                                      const uint32_t myshardId) {
   LOG_MARKER();
 
@@ -1030,7 +1031,7 @@ bool BlockStorage::PutShardStructure(const DequeOfShard& shards,
   bytes shardStructure;
 
   if (!Messenger::ShardStructureToArray(shardStructure, 0,
-                                        SHARDINGSTRUCTURE_VERSION, shards)) {
+                                        SHARDINGSTRUCTURE_VERSION, shards, roles)) {
     LOG_GENERAL(WARNING, "Failed to serialize sharding structure");
     return false;
   }
@@ -1044,7 +1045,7 @@ bool BlockStorage::PutShardStructure(const DequeOfShard& shards,
   return true;
 }
 
-bool BlockStorage::GetShardStructure(DequeOfShard& shards) {
+bool BlockStorage::GetShardStructure(DequeOfShard& shards, RoleMap& roles) {
   LOG_MARKER();
 
   unsigned int index = 1;
@@ -1057,7 +1058,7 @@ bool BlockStorage::GetShardStructure(DequeOfShard& shards) {
 
   uint32_t version = 0;
   Messenger::ArrayToShardStructure(bytes(dataStr.begin(), dataStr.end()), 0,
-                                   version, shards);
+                                   version, shards, roles);
 
   if (version != SHARDINGSTRUCTURE_VERSION) {
     LOG_CHECK_FAIL("Sharding structure version", version,
@@ -1111,13 +1112,14 @@ bool BlockStorage::GetStateDelta(const uint64_t& finalBlockNum,
 
 bool BlockStorage::PutDiagnosticDataNodes(const uint64_t& dsBlockNum,
                                           const DequeOfShard& shards,
+                                          const RoleMap& roles,
                                           const DequeOfNode& dsCommittee) {
   LOG_MARKER();
 
   bytes data;
 
   if (!Messenger::SetDiagnosticDataNodes(data, 0, SHARDINGSTRUCTURE_VERSION,
-                                         shards, DSCOMMITTEE_VERSION,
+                                         shards, roles, DSCOMMITTEE_VERSION,
                                          dsCommittee)) {
     LOG_GENERAL(WARNING, "Messenger::SetDiagnosticDataNodes failed");
     return false;
@@ -1160,6 +1162,7 @@ bool BlockStorage::PutDiagnosticDataCoinbase(
 
 bool BlockStorage::GetDiagnosticDataNodes(const uint64_t& dsBlockNum,
                                           DequeOfShard& shards,
+                                          RoleMap& roles,
                                           DequeOfNode& dsCommittee) {
   LOG_MARKER();
 
@@ -1182,7 +1185,7 @@ bool BlockStorage::GetDiagnosticDataNodes(const uint64_t& dsBlockNum,
   uint32_t shardingStructureVersion = 0;
   uint32_t dsCommitteeVersion = 0;
   if (!Messenger::GetDiagnosticDataNodes(data, 0, shardingStructureVersion,
-                                         shards, dsCommitteeVersion,
+                                         shards, roles, dsCommitteeVersion,
                                          dsCommittee)) {
     LOG_GENERAL(WARNING, "Messenger::GetDiagnosticDataNodes failed");
     return false;
@@ -1267,7 +1270,8 @@ void BlockStorage::GetDiagnosticDataNodes(
     uint32_t dsCommitteeVersion = 0;
 
     if (!Messenger::GetDiagnosticDataNodes(data, 0, shardingStructureVersion,
-                                           entry.shards, dsCommitteeVersion,
+                                           entry.shards, entry.roles,
+                                           dsCommitteeVersion,
                                            entry.dsCommittee)) {
       LOG_GENERAL(
           WARNING,

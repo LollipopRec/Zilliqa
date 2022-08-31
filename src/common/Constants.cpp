@@ -424,6 +424,8 @@ const unsigned int SHARD_SIZE_TOLERANCE_HI{ReadConstantNumeric(
     "SHARD_SIZE_TOLERANCE_HI", "node.network_composition.")};
 const unsigned int STORE_DS_COMMITTEE_INTERVAL{ReadConstantNumeric(
     "STORE_DS_COMMITTEE_INTERVAL", "node.network_composition.")};
+const std::string ROLES_SHARD_ASSIGN_PROP{ReadConstantString(
+    "ROLES_SHARD_ASSIGN_PROP", "node.network_composition.")};
 
 // P2PComm constants
 const unsigned int BROADCAST_INTERVAL{

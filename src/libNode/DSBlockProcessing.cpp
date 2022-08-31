@@ -388,11 +388,12 @@ bool Node::ProcessVCDSBlocksMessage(
   Peer newleaderIP;
 
   DequeOfShard t_shards;
+  RoleMap t_roles;
   uint32_t shardingStructureVersion = 0;
 
   if (!Messenger::GetNodeVCDSBlocksMessage(
           message, cur_offset, shardId, dsblock, vcBlocks,
-          shardingStructureVersion, t_shards)) {
+          shardingStructureVersion, t_shards, t_roles)) {
     LOG_EPOCH(WARNING, m_mediator.m_currentEpochNum,
               "Messenger::GetNodeVCDSBlocksMessage failed.");
     return false;
@@ -406,7 +407,7 @@ bool Node::ProcessVCDSBlocksMessage(
 
   // Verify the DSBlockHashSet member of the DSBlockHeader
   ShardingHash shardingHash;
-  if (!Messenger::GetShardingStructureHash(SHARDINGSTRUCTURE_VERSION, t_shards,
+  if (!Messenger::GetShardingStructureHash(SHARDINGSTRUCTURE_VERSION, t_shards, t_roles,
                                            shardingHash)) {
     LOG_EPOCH(WARNING, m_mediator.m_currentEpochNum,
               "Messenger::GetShardingStructureHash failed.");
@@ -533,6 +534,7 @@ bool Node::ProcessVCDSBlocksMessage(
   {
     lock_guard<mutex> g(m_mediator.m_ds->m_mutexShards);
     m_mediator.m_ds->m_shards = move(t_shards);
+    m_mediator.m_ds->m_roles = move(t_roles);
   }
 
   MinerInfoDSComm minerInfoDSComm;
@@ -552,7 +554,7 @@ bool Node::ProcessVCDSBlocksMessage(
 
   m_myshardId = shardId;
   if (!BlockStorage::GetBlockStorage().PutShardStructure(
-          m_mediator.m_ds->m_shards, m_myshardId)) {
+          m_mediator.m_ds->m_shards, m_mediator.m_ds->m_roles, m_myshardId)) {
     LOG_GENERAL(WARNING, "BlockStorage::PutShardStructure failed");
     return false;
   }
@@ -707,7 +709,7 @@ bool Node::ProcessVCDSBlocksMessage(
 
         if (!Messenger::SetNodeVCDSBlocksMessage(
                 message2, MessageOffset::BODY, shardId, dsblock, vcBlocks,
-                shardingStructureVersion, m_mediator.m_ds->m_shards)) {
+                shardingStructureVersion, m_mediator.m_ds->m_shards, m_mediator.m_ds->m_roles)) {
           LOG_GENERAL(WARNING, "Messenger::SetNodeVCDSBlocksMessage failed");
         } else {
           SendDSBlockToOtherShardNodes(message2);
@@ -751,7 +753,7 @@ bool Node::ProcessVCDSBlocksMessage(
 
       if (!Messenger::SetNodeVCDSBlocksMessage(
               message2, MessageOffset::BODY, shardId, dsblock, vcBlocks,
-              shardingStructureVersion, m_mediator.m_ds->m_shards)) {
+              shardingStructureVersion, m_mediator.m_ds->m_shards, m_mediator.m_ds->m_roles)) {
         LOG_GENERAL(WARNING, "Messenger::SetNodeVCDSBlocksMessage failed");
       } else {
         // Store to local map for VCDSBLOCK
@@ -822,7 +824,7 @@ bool Node::ProcessVCDSBlocksMessage(
     if (canPutNewEntry) {
       BlockStorage::GetBlockStorage().PutDiagnosticDataNodes(
           m_mediator.m_dsBlockChain.GetLastBlock().GetHeader().GetBlockNum(),
-          m_mediator.m_ds->m_shards, *m_mediator.m_DSCommittee);
+          m_mediator.m_ds->m_shards, m_mediator.m_ds->m_roles, *m_mediator.m_DSCommittee);
     }
   }
 

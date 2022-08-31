@@ -71,6 +71,7 @@ class Messenger {
 
   static bool GetShardingStructureHash(const uint32_t& version,
                                        const DequeOfShard& shards,
+                                       const RoleMap& roles,
                                        ShardingHash& dst);
 
   static bool SetAccountBase(bytes& dst, const unsigned int offset,
@@ -236,12 +237,14 @@ class Messenger {
   static bool SetDiagnosticDataNodes(bytes& dst, const unsigned int offset,
                                      const uint32_t& shardingStructureVersion,
                                      const DequeOfShard& shards,
+                                     const RoleMap& roles,
                                      const uint32_t& dsCommitteeVersion,
                                      const DequeOfNode& dsCommittee);
   static bool GetDiagnosticDataNodes(const bytes& src,
                                      const unsigned int offset,
                                      uint32_t& shardingStructureVersion,
                                      DequeOfShard& shards,
+                                     RoleMap& roles,
                                      uint32_t& dsCommitteeVersion,
                                      DequeOfNode& dsCommittee);
 
@@ -308,7 +311,7 @@ class Messenger {
       bytes& dst, const unsigned int offset, const uint32_t consensusID,
       const uint64_t blockNumber, const bytes& blockHash,
       const uint16_t leaderID, const PairOfKey& leaderKey,
-      const DSBlock& dsBlock, const DequeOfShard& shards,
+      const DSBlock& dsBlock, const DequeOfShard& shards, const RoleMap& roles,
       const MapOfPubKeyPoW& allPoWs, const MapOfPubKeyPoW& dsWinnerPoWs,
       bytes& messageToCosign);
 
@@ -316,7 +319,7 @@ class Messenger {
       const bytes& src, const unsigned int offset, const uint32_t consensusID,
       const uint64_t blockNumber, const bytes& blockHash,
       const uint16_t leaderID, const PubKey& leaderKey, DSBlock& dsBlock,
-      DequeOfShard& shards, MapOfPubKeyPoW& allPoWs,
+      DequeOfShard& shards, RoleMap& roles, MapOfPubKeyPoW& allPoWs,
       MapOfPubKeyPoW& dsWinnerPoWs, bytes& messageToCosign);
 
   static bool SetDSFinalBlockAnnouncement(
@@ -362,14 +365,16 @@ class Messenger {
                                        const DSBlock& dsBlock,
                                        const std::vector<VCBlock>& vcBlocks,
                                        const uint32_t& shardingStructureVersion,
-                                       const DequeOfShard& shards);
+                                       const DequeOfShard& shards,
+                                       const RoleMap& roles);
 
   static bool GetNodeVCDSBlocksMessage(const bytes& src,
                                        const unsigned int offset,
                                        uint32_t& shardId, DSBlock& dsBlock,
                                        std::vector<VCBlock>& vcBlocks,
                                        uint32_t& shardingStructureVersion,
-                                       DequeOfShard& shards);
+                                       DequeOfShard& shards,
+                                       RoleMap& roles);
 
   static bool SetNodeVCFinalBlock(bytes& dst, const unsigned int offset,
                                   const uint64_t dsBlockNumber,
@@ -447,9 +452,11 @@ class Messenger {
 
   static bool ShardStructureToArray(bytes& dst, const unsigned int offset,
                                     const uint32_t& version,
-                                    const DequeOfShard& shards);
+                                    const DequeOfShard& shards,
+                                    const RoleMap& roles);
   static bool ArrayToShardStructure(const bytes& src, const unsigned int offset,
-                                    uint32_t& version, DequeOfShard& shards);
+                                    uint32_t& version, DequeOfShard& shards,
+                                    RoleMap& roles);
 
   static bool SetNodeMissingTxnsErrorMsg(
       bytes& dst, const unsigned int offset,
@@ -657,13 +664,14 @@ class Messenger {
   // UNUSED
   static bool SetLookupSetShardsFromSeed(
       bytes& dst, const unsigned int offset, const PairOfKey& lookupKey,
-      const uint32_t& shardingStructureVersion, const DequeOfShard& shards);
+      const uint32_t& shardingStructureVersion, const DequeOfShard& shards, const RoleMap& roles);
 
   static bool GetLookupSetShardsFromSeed(const bytes& src,
                                          const unsigned int offset,
                                          PubKey& lookupPubKey,
                                          uint32_t& shardingStructureVersion,
-                                         DequeOfShard& shards);
+                                         DequeOfShard& shards,
+                                         RoleMap& roles);
 
   static bool SetForwardTxnBlockFromSeed(
       bytes& dst, const unsigned int offset,

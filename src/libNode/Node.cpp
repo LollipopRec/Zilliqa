@@ -951,7 +951,7 @@ bool Node::StartRetrieveHistory(const SyncType syncType,
 
   /// Retrieve sharding structure and setup relative variables
   if (!BlockStorage::GetBlockStorage().GetShardStructure(
-          m_mediator.m_ds->m_shards)) {
+          m_mediator.m_ds->m_shards, m_mediator.m_ds->m_roles)) {
     LOG_GENERAL(WARNING, "BlockStorage::GetShardStructure failed");
   }
 
@@ -2617,7 +2617,7 @@ bool Node::ProcessNewShardNodeNetworkInfo(
     m_mediator.m_ds->UpdateShardNodeNetworkInfo(shardNodeNewNetworkInfo,
                                                 shardNodePubkey);
     if (!BlockStorage::GetBlockStorage().PutShardStructure(
-            m_mediator.m_ds->m_shards, 0)) {
+            m_mediator.m_ds->m_shards, m_mediator.m_ds->m_roles, 0)) {
       LOG_GENERAL(WARNING, "BlockStorage::PutShardStructure failed");
     }
   }
@@ -2644,7 +2644,7 @@ bool Node::ProcessNewShardNodeNetworkInfo(
 
         // Put the sharding structure to disk
         if (!BlockStorage::GetBlockStorage().PutShardStructure(
-                m_mediator.m_ds->m_shards, m_mediator.m_node->m_myshardId)) {
+                m_mediator.m_ds->m_shards, m_mediator.m_ds->m_roles, m_mediator.m_node->m_myshardId)) {
           LOG_GENERAL(WARNING, "BlockStorage::PutShardStructure failed");
         }
         break;
@@ -2669,7 +2669,7 @@ bool Node::ProcessNewShardNodeNetworkInfo(
 
     // Put the sharding structure to disk
     if (!BlockStorage::GetBlockStorage().PutShardStructure(
-            m_mediator.m_ds->m_shards, m_mediator.m_node->m_myshardId)) {
+            m_mediator.m_ds->m_shards, m_mediator.m_ds->m_roles, m_mediator.m_node->m_myshardId)) {
       LOG_GENERAL(WARNING, "BlockStorage::PutShardStructure failed");
     }
   }

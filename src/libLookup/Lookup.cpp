@@ -1096,6 +1096,30 @@ DequeOfShard Lookup::GetShardPeers() {
   return m_mediator.m_ds->m_shards;
 }
 
+RoleMap Lookup::GetRoleMap() {
+  if (!LOOKUP_NODE_MODE) {
+    LOG_GENERAL(WARNING,
+                "Lookup::GetRoleMap not expected to be called from "
+                "other than the LookUp node.");
+    return RoleMap();
+  }
+
+  lock_guard<mutex> g(m_mediator.m_ds->m_mutexShards);
+
+  // debug: print role_map
+  LOG_GENERAL(INFO, "GetRoleMap");
+  for(const auto& role: m_mediator.m_ds->m_roles) {
+    std::string ss;
+    ss += "Assigned role: " + std::to_string(role.first) + " to shards:";
+    for (const auto& sid: role.second) {
+      ss += " " + std::to_string(sid);
+    }
+    LOG_GENERAL(INFO, ss);
+  }
+
+  return m_mediator.m_ds->m_roles;
+}
+
 vector<Peer> Lookup::GetNodePeers() {
   if (!LOOKUP_NODE_MODE) {
     LOG_GENERAL(WARNING,
@@ -1632,6 +1656,7 @@ bool Lookup::ComposeAndStoreVCDSBlockMessage(const uint64_t& blockNum) {
   // Hack to make sure sharding structure is received if this node had just
   // rejoined.
   DequeOfShard shardingStruct;
+  RoleMap roles;
   {
     std::lock_guard<mutex> lock(m_mediator.m_ds->m_mutexShards);
     if (m_mediator.m_ds->m_shards.empty()) {
@@ -1639,7 +1664,12 @@ bool Lookup::ComposeAndStoreVCDSBlockMessage(const uint64_t& blockNum) {
                   "Sharding structure for current ds epoch yet not received.");
       return false;
     }
+    if (m_mediator.m_ds->m_roles.empty()) {
+      LOG_GENERAL(INFO,
+                  "Roles assignment for current ds epoch yet not received.");
+    }
     shardingStruct = m_mediator.m_ds->m_shards;
+    roles = m_mediator.m_ds->m_roles;
   }
 
   DSBlockSharedPtr vcdsBlkPtr;
@@ -1662,7 +1692,7 @@ bool Lookup::ComposeAndStoreVCDSBlockMessage(const uint64_t& blockNum) {
 
   if (!Messenger::SetNodeVCDSBlocksMessage(
           vcdsblock_message, MessageOffset::BODY, 0, *vcdsBlkPtr, vcBlocks,
-          SHARDINGSTRUCTURE_VERSION, shardingStruct)) {
+          SHARDINGSTRUCTURE_VERSION, shardingStruct, roles)) {
     LOG_EPOCH(WARNING, m_mediator.m_currentEpochNum,
               "Messenger::SetNodeVCDSBlocksMessage failed " << *vcdsBlkPtr);
     return false;
@@ -2183,7 +2213,8 @@ bool Lookup::ProcessGetShardFromSeed([[gnu::unused]] const bytes& message,
 
   if (!Messenger::SetLookupSetShardsFromSeed(
           msg, MessageOffset::BODY, m_mediator.m_selfKey,
-          SHARDINGSTRUCTURE_VERSION, m_mediator.m_ds->m_shards)) {
+          SHARDINGSTRUCTURE_VERSION, m_mediator.m_ds->m_shards,
+          m_mediator.m_ds->m_roles)) {
     LOG_EPOCH(WARNING, m_mediator.m_currentEpochNum,
               "Messenger::SetLookupSetShardsFromSeed failed.");
     return false;
@@ -2202,10 +2233,11 @@ bool Lookup::ProcessSetShardFromSeed(
   LOG_MARKER();
 
   DequeOfShard shards;
+  RoleMap roles;
   PubKey senderPubKey;
   uint32_t shardingStructureVersion = 0;
   if (!Messenger::GetLookupSetShardsFromSeed(
-          message, offset, senderPubKey, shardingStructureVersion, shards)) {
+          message, offset, senderPubKey, shardingStructureVersion, shards, roles)) {
     LOG_EPOCH(WARNING, m_mediator.m_currentEpochNum,
               "Messenger::GetLookupSetShardsFromSeed failed.");
     return false;
@@ -2235,6 +2267,7 @@ bool Lookup::ProcessSetShardFromSeed(
   lock_guard<mutex> g(m_mediator.m_ds->m_mutexShards);
 
   m_mediator.m_ds->m_shards = move(shards);
+  m_mediator.m_ds->m_roles = move(roles);
 
   cv_shardStruct.notify_all();
 
@@ -4726,6 +4759,7 @@ bool Lookup::CleanVariables() {
   {
     std::lock_guard<mutex> lock(m_mediator.m_ds->m_mutexShards);
     m_mediator.m_ds->m_shards.clear();
+    m_mediator.m_ds->m_roles.clear();
   }
   {
     std::lock_guard<mutex> lock(m_mutexNodesInNetwork);

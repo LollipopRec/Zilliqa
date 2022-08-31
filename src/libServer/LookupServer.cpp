@@ -1578,12 +1578,18 @@ Json::Value LookupServer::GetShardingStructure() {
     Json::Value _json;
 
     auto shards = m_mediator.m_lookup->GetShardPeers();
+    auto roles = m_mediator.m_lookup->GetRoleMap();
 
     unsigned int num_shards = shards.size();
 
     for (unsigned int i = 0; i < num_shards; i++) {
       _json["NumPeers"].append(static_cast<unsigned int>(shards[i].size()));
     }
+    for (const auto& m : roles) {
+      for (const auto& sid : m.second) {
+        _json["RolesAssign"][std::to_string(m.first)].append(sid); 
+      }
+    } 
 
     return _json;
 

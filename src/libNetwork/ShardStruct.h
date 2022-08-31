@@ -44,4 +44,14 @@ enum NodeMessage { NODE_PUBKEY, NODE_PEER, NODE_MSG };
 using NodeMsg = std::tuple<PubKey, Peer, bytes>;
 using VectorOfNodeMsg = std::vector<NodeMsg>;
 
+// Define roles, each role contains at least one shard
+enum ShardRole {
+  RECOMMENDER = 0,
+  MODEL_TRAINER,
+  CONTENT_MINER,
+  ROLE_COUNT,
+};
+using ShardIdList = std::vector<uint32_t>; 
+using RoleMap = std::map<ShardRole, ShardIdList>;
+
 #endif  // ZILLIQA_SRC_LIBNETWORK_SHARDSTRUCT_H_
